@@ -54,6 +54,15 @@
         android:inputType="number"
         android:textColorHint="#00796B" />
 
+    <EditText
+        android:id="@+id/priod"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="検出時間設定"
+        android:importantForAutofill="no"
+        android:inputType="number"
+        android:textColorHint="#00796B" />
+
 
     <!--ボタン-->
 

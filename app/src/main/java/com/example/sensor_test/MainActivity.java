@@ -11,6 +11,8 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.hardware.Sensor;
@@ -29,6 +31,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
 
 
 import java.io.File;
@@ -107,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final int READBUFFERSIZE          = 1024;    // 受信バッファーのサイズ
     private int INTERVAL_TIME           = 20; //測定間隔(mSec)
     private double PEAK_NUM           = 14.5; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
+    private double PERIOD           = 6;//一つ目のピークから次のピークまでの検出しない時間を設定する
 
     // メンバー変数
     private BluetoothAdapter mBluetoothAdapter;    // BluetoothAdapter : Bluetooth処理で必要
@@ -370,12 +374,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         EditText edit_v = findViewById(R.id.interval_time); //このコンポーネントにアクセスして、ユーザー入力などの操作を行うことができる
         if (!edit_v.getText().toString().equals("")) { //テキストを取得し、それが空でないかどうかを判定
             INTERVAL_TIME = Integer.parseInt(edit_v.getText().toString()); //ユーザーが入力した値がINTERVAL_TIMEの値として設定される
-        } else {
-            INTERVAL_TIME = 20; //コンポーネントにテキストが空であった場合に、デフォルトの値を設定
+//        } else {
+//            INTERVAL_TIME = 20; //コンポーネントにテキストが空であった場合に、デフォルトの値を設定
         }
         edit_v = findViewById(R.id.peak_stats);
         if (!edit_v.getText().toString().equals("")) {
             PEAK_NUM = Double.parseDouble(edit_v.getText().toString()); //そのテキストを浮動小数点数に変換して、PEAK_NUM 変数に代入
+        }
+        edit_v = findViewById(R.id.priod);
+        if (!edit_v.getText().toString().equals("")) {
+            PERIOD  = Double.parseDouble(edit_v.getText().toString()); //そのテキストを浮動小数点数に変換して、PERIOD 変数に代入
         }
 
         //加速度センサーデータの記録用
@@ -513,7 +521,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        Log.i(TAG, "onSensorChanged: ");
         //立ち上がり用
         if(hosu_stand_step_select == 1){
-        //　タイマーが10秒経過するとタイマーをストップする
+            //　タイマーが10秒経過するとタイマーをストップする
             if (accel_data.time.get(accel_data.time.size() - 1) >= 10000) {
                 mButton_End.setEnabled(false);    // ボタンの有効化
                 sensorManager.unregisterListener(this);
@@ -524,11 +532,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 //　サウンド出力
                 // MediaPlayer のインスタンス生成
-                //            MediaPlayer mediaPlayer = new MediaPlayer();
-                //            mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
-                //            // 音量調整を端末のボタンに任せる
-                //            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                //            mediaPlayer.start();
+                MediaPlayer mediaPlayer = new MediaPlayer();
+                mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
+                // 音量調整を端末のボタンに任せる
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mediaPlayer.start();
             }
         }
         //ステッピング用
@@ -542,13 +550,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 mButton_Start.setEnabled(true);    // ボタンの有効化
                 write("Stop Sensor");
 
-                //　サウンド出力
-                // MediaPlayer のインスタンス生成
-                //            MediaPlayer mediaPlayer = new MediaPlayer();
-                //            mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
-                //            // 音量調整を端末のボタンに任せる
-                //            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                //            mediaPlayer.start();
+                //サウンド出力MediaPlayer のインスタンス生成
+                MediaPlayer mediaPlayer = new MediaPlayer();
+                mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
+                // 音量調整を端末のボタンに任せる
+                mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                mediaPlayer.start();
             }
         }
 
@@ -588,7 +595,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // true フラグを使用して、ファイルが既存の内容を保持しながらデータを追加するように設定
                     output = new FileOutputStream(axisPeakFile, true); // 既存のファイルにデータを追加していくことができる
                     ArrayList<String> comDataPeakList = new ArrayList<>(); // ピーク検出の結果や関連する情報を格納するための ArrayList オブジェクト comDataPeakList を作成
-                    int period = 6;
+                    int period = (int) PERIOD;
+                    int firstPeak = 0;
                     int countdown = period;
                     int candidateIndex = -1;
                     float candidateValue = Float.MIN_VALUE;
@@ -602,35 +610,112 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                     int[] isCandidate = new int[acc.length];
 
-                    Map<Integer, Float> peaks = new HashMap<>();
+                    //Map<Integer, Float> peaks = new HashMap<>();
 
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
                     for (int i = 0; i < isCandidate.length; i++) {
-                        countdown--;//各ループイテレーションごとに1ずつ減少
                         //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
                         //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
 
                         //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
-                        if (acc[i] > PEAK_NUM && (candidateIndex == -1 || acc[i] > candidateValue)) {
-                            candidateIndex = i;
-                            candidateValue = acc[i];
+                        if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i-1] < acc[i] && acc [i+1] < acc[i]) {
+                            // ピークが検出されたのでカウントを増やす
+                            peakCount++;
+                            comDataPeakList.add(String.valueOf(comDataList.get(i)));
+                            firstPeak = 1;
+
+                            //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
+                            //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
+                            // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
+
+                        } else {
+                            comDataPeakList.add("");
+                        }
+
+                        if(firstPeak == 1 && countdown == 0 ) {
+                            firstPeak = 0;
                             countdown = period;
                         }
-                        isCandidate[i] = 0; // デフォルトではピーク候補ではないと設定
 
-                        //countdown が0になるか、データポイントが最後に達した場合、現在のピーク候補が確定され、その位置と値が peaks マップに追加
-                        if (countdown == 0 || i == isCandidate.length - 1 && acc[i] > PEAK_NUM) {
-                            if (candidateIndex != -1) {
-                                peaks.put(candidateIndex, candidateValue);
-                                candidateIndex = -1;
-                                // ピークが検出されたのでカウントを増やす
-                                peakCount++;
-                                comDataPeakList.add(String.valueOf(comDataList.get(i)));
-                            }
-                            //countdown は period の値にリセットされ、新しいピーク候補の有効期間が開始
-                            countdown = period;
-                            comDataPeakList.add("");
+                        if(firstPeak == 1){
+                            countdown--;
+                        }
+                    }
+//                    int period = 6;
+//                    int firstPeak = 0;
+//                    int countdown = period;
+//                    int candidateIndex = -1;
+//                    float candidateValue = Float.MIN_VALUE;
+//                    int peakCount = 0; // ピークのカウントを初期化
+//                    // ユークリッドノルムデータをfloat配列に変換
+//                    // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
+//                    float[] acc = new float[comDataList.size()];
+//                    for (int i = 0; i < comDataList.size(); i++) {
+//                        acc[i] = comDataList.get(i).floatValue();
+//                    }
+//
+//                    int[] isCandidate = new int[acc.length];
+//
+//                    //Map<Integer, Float> peaks = new HashMap<>();
+//
+//                    //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
+//                    //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
+//                    for (int i = 0; i < isCandidate.length; i++) {
+//                        //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
+//                        //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
+//
+//                        //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
+//                        if (acc[i] > PEAK_NUM && firstPeak == 0) {
+//                            // ピークが検出されたのでカウントを増やす
+//                            peakCount++;
+//                            comDataPeakList.add(String.valueOf(comDataList.get(i)));
+//                            firstPeak = 1;
+//
+//                        }else{
+//                            comDataPeakList.add("");
+//                        }
+//
+//                        if(firstPeak == 1 && countdown == 0 ) {
+//                            firstPeak = 0;
+//                            countdown = period;
+//                        }
+//
+//                        if(firstPeak == 1){
+//                            countdown--;
+//                        }
+//                    }
+
+//
+//                        //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
+//                        //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
+//
+//                        //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
+//                        if (acc[i] > PEAK_NUM && candidateIndex == -1 ) {
+//                            first_peak  ;
+//                            candidateIndex = i;
+//                            candidateValue = acc[i];
+//                            countdown = period;
+//                        }
+//                        isCandidate[i] = 0; // デフォルトではピーク候補ではないと設定
+//
+//                        //countdown が0になるか、データポイントが最後に達した場合、現在のピーク候補が確定され、その位置と値が peaks マップに追加
+//                        if (acc[i] > PEAK_NUM && (countdown == 0 || i == isCandidate.length - 1 )) {
+//                            if (candidateIndex != -1) {
+//                                peaks.put(candidateIndex, candidateValue);
+//                                candidateIndex = -1;
+//                                // ピークが検出されたのでカウントを増やす
+//                                peakCount++;
+//                                comDataPeakList.add(String.valueOf(comDataList.get(i)));
+//                            } else {
+//                                comDataPeakList.add("");
+//                            }
+//                            //countdown は period の値にリセットされ、新しいピーク候補の有効期間が開始
+//                            countdown = period;
+//                        } else {
+//                            comDataPeakList.add("");
+//                        }
+//                    }
 //                    for(int i=delay_time; i<comDataList.size()-1; i++){ //遅延時間以降の加速度データの要素に対してループ
 //                        if (comDataList.get(i-1) < comDataList.get(i) && comDataList.get(i) > comDataList.get(i+1)){ //加速度データがピークの条件を満たしているかを判定
 //                            if (comDataList.get(i) > PEAK_NUM) { //ピークの条件を満たす加速度データの場合、その値が一定の閾値 PEAK_NUM を超えているかを確認
@@ -659,20 +744,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //                            char[] peak_num_hosu = new char[0];
 //                            ((TextView) findViewById(R.id.textview_hosu)).setText(String.valueOf(peak_num_hosu));
 //
-                        }
-                        comDataPeakList.add("");
-                    }
                     if(hosu_stand_step_select == 0){
-                        str = "歩数," + peakCount + "\n"; //カウントされた歩数の情報を文字列として作成し、str 変数に格納
+                        str = "歩数," + peakCount + "\n";
                         ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount));
-                    }
-                    if(hosu_stand_step_select == 1){
-                        str = "立ち上がり数," + peakCount/2 + "\n"; //カウントされた歩数の情報を文字列として作成し、str 変数に格納
-                        ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount/2));
-                    }
-                    if(hosu_stand_step_select == 2){
-                        str = "ステップ数," + peakCount/2 + "\n"; //カウントされた歩数の情報を文字列として作成し、str 変数に格納
-                        ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount/2));
+                    } else if(hosu_stand_step_select == 1){
+                        if(peakCount != 0){
+                            str = "立ち上がり数," + peakCount/2 + "\n";
+                            ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount/2));
+                        } else {
+                            str = "立ち上がり数, 0\n";
+                            ((TextView) findViewById(R.id.textView_hosu)).setText("0");
+                        }
+                    } else if(hosu_stand_step_select == 2){
+                        if(peakCount != 0){
+                            str = "ステップ数," + peakCount/2 + "\n";
+                            ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount/2));
+                        } else {
+                            str = "ステップ数, 0\n";
+                            ((TextView) findViewById(R.id.textView_hosu)).setText("0");
+                        }
                     }
 
                     str += "計測時間,実時間,3軸,ピーク\n"; //計測時間、実時間、3軸のデータ、ピーク情報を表すヘッダー行を作成し、str 変数に追加
