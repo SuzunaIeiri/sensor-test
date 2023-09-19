@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final int READBUFFERSIZE          = 1024;    // 受信バッファーのサイズ
     private int INTERVAL_TIME           = 20; //測定間隔(mSec)
     private double PEAK_NUM           = 14.5; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
-    private double PERIOD           = 6;//一つ目のピークから次のピークまでの検出しない時間を設定する
+    private double PERIOD           = 5;//一つ目のピークから次のピークまでの検出しない時間を設定する
 
     // メンバー変数
     private BluetoothAdapter mBluetoothAdapter;    // BluetoothAdapter : Bluetooth処理で必要
@@ -188,8 +188,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             ( (TextView)findViewById( R.id.textview_read ) ).setText(res_string);//受信したデータの内容をTextViewに表示
                             mReadBufferCounter = 0;//受信データの処理が終わった後、カウンターをリセット
                         }
-                        else if( '\n' == c ) {//通信データが改行文字（\n）の場合、何もせずにスキップ
-                            ; // 何もしない
+                        else if( '\n' == c ) {//通信データが改行文字（\n）の場合、何もせずにスキップ  何もしない
                         }
                         else {    // 途中
                             if( ( READBUFFERSIZE - 1 ) > mReadBufferCounter ) {    // バッファ内に受信データを保存できる余地があるかどうかを判定,mReadBuffer[READBUFFERSIZE - 2] までOK。
@@ -366,11 +365,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mButton_Start.setEnabled( false );    // ボタンの無効化
         String date1 = getNowDate(); //現在の日付と時刻を取得して、それを特定のフォーマットで文字列として返す役割を持つ
         String accelFileName = date1 + "_accel_sensor.csv"; //日付を含むファイル名を生成
+        String hosu_stand_step_FileName;
 //        String gyroFileName = date1 + "_gyro_sensor.csv";
 //        String magnetFileName = date1 + "_magnet_sensor.csv";
 //        String SMAacFileName = date1 + "_SMAacdata.csv";
-        String axisPeakFileName = date1 + "_3axis_Peak.csv";
-        Context context = getApplicationContext(); //アプリケーションのコンテキストを取得
+
+        if(hosu_stand_step_select == 0){
+            hosu_stand_step_FileName = date1 + "_hosu_3axis_Peak.csv";
+        } else if (hosu_stand_step_select == 1) {
+            hosu_stand_step_FileName = date1 + "_stand_3axis_Peak.csv";
+        } else  {
+            hosu_stand_step_FileName = date1 + "_step_3axis_Peak.csv";
+        }
+        String axisPeakFileName = hosu_stand_step_FileName;
+
+            Context context = getApplicationContext(); //アプリケーションのコンテキストを取得
         EditText edit_v = findViewById(R.id.interval_time); //このコンポーネントにアクセスして、ユーザー入力などの操作を行うことができる
         if (!edit_v.getText().toString().equals("")) { //テキストを取得し、それが空でないかどうかを判定
             INTERVAL_TIME = Integer.parseInt(edit_v.getText().toString()); //ユーザーが入力した値がINTERVAL_TIMEの値として設定される
@@ -391,6 +400,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        gyrofile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), gyroFileName);
 //        magnetfile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), magnetFileName);
 //        SMAacFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), SMAacFileName);
+
         axisPeakFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), axisPeakFileName);
         Sensor accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER); //Sensor.TYPE_ACCELEROMETER は、加速度センサーのタイプを指定
 //        Sensor gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
