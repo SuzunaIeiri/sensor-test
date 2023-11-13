@@ -109,8 +109,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final int REQUEST_CONNECTDEVICE   = 2; // デバイス接続要求時の識別コード
     private static final int READBUFFERSIZE          = 1024;    // 受信バッファーのサイズ
     private int INTERVAL_TIME           = 20; //測定間隔(mSec)
-    private double PEAK_NUM           = 14.5; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
-    private double PERIOD           = 5;//一つ目のピークから次のピークまでの検出しない時間を設定する
+    private double PEAK_NUM           = 17; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
+    private double LOW_PEAK_NUM           = 5.8; //下ピーク検出用閾値
+    private double PERIOD           = 10;//一つ目のピークから次のピークまでの検出しない時間を設定する
+    private double LOW_PERIOD           = 40;//一つ目の下ピークから次の下ピークまでの検出しない時間を設定する
+    private double STAND_TIME        = 30000;//立ち上がりの計測時間を設定する
+    private double STEP_TIME         = 20000;//ステッピングの計測時間を設定する
 
     // メンバー変数
     private BluetoothAdapter mBluetoothAdapter;    // BluetoothAdapter : Bluetooth処理で必要
@@ -530,9 +534,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         textView.setText(strTmp);
 //        Log.i(TAG, "onSensorChanged: ");
         //立ち上がり用
-        if(hosu_stand_step_select == 1){
+        if(hosu_stand_step_select == 1) {
             //　タイマーが10秒経過するとタイマーをストップする
-            if (accel_data.time.get(accel_data.time.size() - 1) >= 10000) {
+            if (accel_data.time.get(accel_data.time.size() - 1) >= STAND_TIME) {
                 mButton_End.setEnabled(false);    // ボタンの有効化
                 sensorManager.unregisterListener(this);
                 saveFile();
@@ -542,17 +546,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 //　サウンド出力
                 // MediaPlayer のインスタンス生成
-                MediaPlayer mediaPlayer = new MediaPlayer();
-                mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
-                // 音量調整を端末のボタンに任せる
+                MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
                 mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 mediaPlayer.start();
+
+                // MediaPlayerの解放
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        mp.release();
+                    }
+                });
             }
-        }
-        //ステッピング用
-        if(hosu_stand_step_select == 2){
+        }else if(hosu_stand_step_select == 2){ //ステッピング用
             //　タイマーが10秒経過するとタイマーをストップする
-            if (accel_data.time.get(accel_data.time.size() - 1) >= 10000) {
+            if (accel_data.time.get(accel_data.time.size() - 1) >= STEP_TIME) {
                 mButton_End.setEnabled(false);    // ボタンの有効化
                 sensorManager.unregisterListener(this);
                 saveFile();
@@ -561,11 +569,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 write("Stop Sensor");
 
                 //サウンド出力MediaPlayer のインスタンス生成
-                MediaPlayer mediaPlayer = new MediaPlayer();
-                mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
-                // 音量調整を端末のボタンに任せる
+                MediaPlayer mediaPlayer = MediaPlayer.create(this, R.raw.testtone);
                 mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                 mediaPlayer.start();
+
+                // MediaPlayerの解放
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        mp.release();
+                    }
+                });
             }
         }
 
@@ -605,52 +619,86 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // true フラグを使用して、ファイルが既存の内容を保持しながらデータを追加するように設定
                     output = new FileOutputStream(axisPeakFile, true); // 既存のファイルにデータを追加していくことができる
                     ArrayList<String> comDataPeakList = new ArrayList<>(); // ピーク検出の結果や関連する情報を格納するための ArrayList オブジェクト comDataPeakList を作成
+                    ArrayList<String> comDataUnderPeakList = new ArrayList<>();
                     int period = (int) PERIOD;
+                    int lowPeriod = (int) LOW_PERIOD;
                     int firstPeak = 0;
+                    int lowPeak = 0;
                     int countdown = period;
-                    int candidateIndex = -1;
-                    float candidateValue = Float.MIN_VALUE;
+                    int lowCountdown = lowPeriod;
+                    float MaxPEAK_NUM = 0;
                     int peakCount = 0; // ピークのカウントを初期化
+                    int lowCount = 0;
+                    float lowPeakValue = 0;
+
                     // ユークリッドノルムデータをfloat配列に変換
                     // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
                     float[] acc = new float[comDataList.size()];
                     for (int i = 0; i < comDataList.size(); i++) {
                         acc[i] = comDataList.get(i).floatValue();
+                        if(MaxPEAK_NUM < comDataList.get(i).floatValue()){
+                           MaxPEAK_NUM = comDataList.get(i).floatValue();
+                        }
                     }
 
                     int[] isCandidate = new int[acc.length];
 
                     //Map<Integer, Float> peaks = new HashMap<>();
-
+                    //PEAK_NUM = MaxPEAK_NUM * 0.9;
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
                     for (int i = 0; i < isCandidate.length; i++) {
-                        //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
-                        //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
+                        if  (hosu_stand_step_select == 1 ) {
+                            //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
+                            if (acc[i] < LOW_PEAK_NUM && lowPeak == 0 && acc[i - 1] > acc[i] && acc[i + 1] > acc[i]) {
+                                // ピークが検出されたのでカウントを増やす
+                                lowCount++;
+                                comDataPeakList.add(String.valueOf(comDataList.get(i)));
+                                lowPeak = 1;
+                                lowCountdown = lowPeriod;
+                                //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
+                                //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
+                                // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
+                            } else {
+                                comDataPeakList.add("");
+                            }
 
-                        //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
-                        if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i-1] < acc[i] && acc [i+1] < acc[i]) {
-                            // ピークが検出されたのでカウントを増やす
-                            peakCount++;
-                            comDataPeakList.add(String.valueOf(comDataList.get(i)));
-                            firstPeak = 1;
+                            if (lowPeak == 1 && lowCountdown == 0) {
+                                lowPeak = 0;
+                            }
 
-                            //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
-                            //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
-                            // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
+                            if (lowPeak == 1) {
+                                lowCountdown--;
 
-                        } else {
-                            comDataPeakList.add("");
+                            } else {
+                                comDataUnderPeakList.add("");
+                            }
+                        }else {
+                            if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
+                                // ピークが検出されたのでカウントを増やす
+                                peakCount++;
+                                comDataPeakList.add(String.valueOf(comDataList.get(i)));
+                                firstPeak = 1;
+
+                                //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
+                                //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
+                                // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
+
+                            } else {
+                                comDataPeakList.add("");
+                            }
+
+                            if (firstPeak == 1 && countdown == 0) {
+                                firstPeak = 0;
+                                countdown = period;
+                            }
+
+                            if (firstPeak == 1) {
+                                countdown--;
+                            }
                         }
 
-                        if(firstPeak == 1 && countdown == 0 ) {
-                            firstPeak = 0;
-                            countdown = period;
-                        }
 
-                        if(firstPeak == 1){
-                            countdown--;
-                        }
                     }
 //                    int period = 6;
 //                    int firstPeak = 0;
@@ -758,9 +806,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         str = "歩数," + peakCount + "\n";
                         ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount));
                     } else if(hosu_stand_step_select == 1){
-                        if(peakCount != 0){
-                            str = "立ち上がり数," + peakCount/2 + "\n";
-                            ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount/2));
+                        if(lowCount != 0){
+                            str = "立ち上がり数," + lowCount + "\n";
+                            ((TextView) findViewById(R.id.MaxPeak)).setText(String.valueOf(MaxPEAK_NUM));
+                            ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(lowCount));
                         } else {
                             str = "立ち上がり数, 0\n";
                             ((TextView) findViewById(R.id.textView_hosu)).setText("0");
