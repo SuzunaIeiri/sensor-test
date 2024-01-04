@@ -620,6 +620,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     output = new FileOutputStream(axisPeakFile, true); // 既存のファイルにデータを追加していくことができる
                     ArrayList<String> comDataPeakList = new ArrayList<>(); // ピーク検出の結果や関連する情報を格納するための ArrayList オブジェクト comDataPeakList を作成
                     ArrayList<String> comDataUnderPeakList = new ArrayList<>();
+                    ArrayList<Integer> pointsBetweenPeaks = new ArrayList<>(); // 条件に合致するピーク間のデータポイント数を格納
                     int period = (int) PERIOD;
                     int lowPeriod = (int) LOW_PERIOD;
                     int firstPeak = 0;
@@ -629,7 +630,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     float MaxPEAK_NUM = 0;
                     int peakCount = 0; // ピークのカウントを初期化
                     int lowCount = 0;
-                    float lowPeakValue = 0;
+                    int lastPeakIndex = -1;//最後の上ピーク
 
                     // ユークリッドノルムデータをfloat配列に変換
                     // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
@@ -640,14 +641,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                            MaxPEAK_NUM = comDataList.get(i).floatValue();
                         }
                     }
-
-                    int[] isCandidate = new int[acc.length];
-
-                    //Map<Integer, Float> peaks = new HashMap<>();
-                    //PEAK_NUM = MaxPEAK_NUM * 0.9;
-                    //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
-                    //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
-                    for (int i = 0; i < isCandidate.length; i++) {
+                    //int[] isCandidate = new int[acc.length];
+                    for (int i = 0; i < comDataList.size() - 1; i++) {
                         if  (hosu_stand_step_select == 1 ) {
                             //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
                             if (acc[i] < LOW_PEAK_NUM && lowPeak == 0 && acc[i - 1] > acc[i] && acc[i + 1] > acc[i]) {
@@ -656,9 +651,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 comDataPeakList.add(String.valueOf(comDataList.get(i)));
                                 lowPeak = 1;
                                 lowCountdown = lowPeriod;
-                                //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
-                                //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
-                                // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
                             } else {
                                 comDataPeakList.add("");
                             }
@@ -673,20 +665,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             } else {
                                 comDataUnderPeakList.add("");
                             }
-                        }else {
+                        }else {//上ピーク検出処理
                             if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
-                                // ピークが検出されたのでカウントを増やす
-                                peakCount++;
+                                // ピークが検出された場合
+                                peakCount++;//カウントを増やす
                                 comDataPeakList.add(String.valueOf(comDataList.get(i)));
                                 firstPeak = 1;
 
-                                //else if (acc[i] > PEAK_NUM && firstPeak == 1 && acc[i] > acc[i-1]) {
-                                //comDataPeakList.set(comDataPeakList.size() - 1, String.valueOf(comDataList.get(i)));
-                                // 現在の値が前のピークよりも大きい場合、新しいピークとして置き換える
-
-                            } else {
-                                comDataPeakList.add("");
+                                if (lastPeakIndex != -1) {
+                                    int pointCount = 0;
+                                    for (int j = lastPeakIndex + 1; j < i; j++) {
+                                        if (acc[j] < 9.8) {
+                                            pointCount++;
+                                        }
+                                    }
+                                    pointsBetweenPeaks.add(pointCount);
+                                }
+                                lastPeakIndex = i;
                             }
+                        }
+                            for (int count : pointsBetweenPeaks) {
+                                System.out.println("ピーク間のデーター数" + count);
+
+//                            } else {
+//                                comDataPeakList.add("");
+//                            }
 
                             if (firstPeak == 1 && countdown == 0) {
                                 firstPeak = 0;
