@@ -370,9 +370,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         String date1 = getNowDate(); //現在の日付と時刻を取得して、それを特定のフォーマットで文字列として返す役割を持つ
         String accelFileName = date1 + "_accel_sensor.csv"; //日付を含むファイル名を生成
         String hosu_stand_step_FileName;
-//        String gyroFileName = date1 + "_gyro_sensor.csv";
-//        String magnetFileName = date1 + "_magnet_sensor.csv";
-//        String SMAacFileName = date1 + "_SMAacdata.csv";
 
         if(hosu_stand_step_select == 0){
             hosu_stand_step_FileName = date1 + "_hosu_3axis_Peak.csv";
@@ -387,8 +384,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         EditText edit_v = findViewById(R.id.interval_time); //このコンポーネントにアクセスして、ユーザー入力などの操作を行うことができる
         if (!edit_v.getText().toString().equals("")) { //テキストを取得し、それが空でないかどうかを判定
             INTERVAL_TIME = Integer.parseInt(edit_v.getText().toString()); //ユーザーが入力した値がINTERVAL_TIMEの値として設定される
-//        } else {
-//            INTERVAL_TIME = 20; //コンポーネントにテキストが空であった場合に、デフォルトの値を設定
         }
         edit_v = findViewById(R.id.peak_stats);
         if (!edit_v.getText().toString().equals("")) {
@@ -401,20 +396,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         //加速度センサーデータの記録用
         accelFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), accelFileName); //getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) は、データの保存先を指定
-//        gyrofile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), gyroFileName);
-//        magnetfile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), magnetFileName);
-//        SMAacFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), SMAacFileName);
-
         axisPeakFile = new File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), axisPeakFileName);
         Sensor accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER); //Sensor.TYPE_ACCELEROMETER は、加速度センサーのタイプを指定
-//        Sensor gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-//        Sensor magnet = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_FASTEST); //センサーデータが取得された際に特定の処理が実行される
-//        sensorManager.registerListener(this, gyro, 10000);
-//        sensorManager.registerListener(this, gyro, SensorManager.SENSOR_DELAY_FASTEST);
-//        sensorManager.registerListener(this, magnet, 10000);
-//        sensorManager.registerListener(this, magnet, SensorManager.SENSOR_DELAY_FASTEST);
-
         start_time = getNowTime(); //開始時刻を取得
         now_time = 0;
         accel_data.init();
@@ -482,34 +466,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 accel_data.time.add(sensorT);
             }
-            // showInfo(event);
         }
-
-//        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE){
-//            now_time = getNowTime();
-//            sensorX = event.values[0];
-//            sensorY = event.values[1];
-//            sensorZ = event.values[2];
-//            sensorT = now_time == 0 ? 0 : now_time - start_time;
-//
-//            gyro_data.x.add(sensorX);
-//            gyro_data.y.add(sensorY);
-//            gyro_data.z.add(sensorZ);
-//            gyro_data.time.add(sensorT);
-//        }
-//
-//        if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD){
-//            now_time = getNowTime();
-//            sensorX = event.values[0];
-//            sensorY = event.values[1];
-//            sensorZ = event.values[2];
-//            sensorT = now_time == 0 ? 0 : now_time - start_time;
-//
-//            magnet_data.x.add(sensorX);
-//            magnet_data.y.add(sensorY);
-//            magnet_data.z.add(sensorZ);
-//            magnet_data.time.add(sensorT);
-//        }
 
         String strTmp = "";
         if (accel_data.time.size() > 0) {
@@ -519,20 +476,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     + " Y: " + accel_data.y.get(accel_data.y.size() - 1) + "\n"
                     + " Z: " + accel_data.z.get(accel_data.z.size() - 1) + "\n";
         }
-//        if (gyro_data.time.size() > 0) {
-//            strTmp += "ジャイロセンサ\n"
-//                    + " X: " + gyro_data.x.get(gyro_data.x.size() - 1) + "\n"
-//                    + " Y: " + gyro_data.y.get(gyro_data.y.size() - 1) + "\n"
-//                    + " Z: " + gyro_data.z.get(gyro_data.z.size() - 1) + "\n";
-//        }
-//        if (magnet_data.time.size() > 0) {
-//            strTmp += "地磁気センサ\n"
-//                    + " X: " + magnet_data.x.get(magnet_data.x.size() - 1) + "\n"
-//                    + " Y: " + magnet_data.y.get(magnet_data.y.size() - 1) + "\n"
-//                    + " Z: " + magnet_data.z.get(magnet_data.z.size() - 1) + "\n";
-//        }
         textView.setText(strTmp);
-//        Log.i(TAG, "onSensorChanged: ");
         //立ち上がり用
         if(hosu_stand_step_select == 1) {
             //　タイマーが10秒経過するとタイマーをストップする
@@ -582,10 +526,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 });
             }
         }
-
     }
-
-
 
     //未使用　定義のみ
     @Override
@@ -654,11 +595,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             } else {
                                 comDataPeakList.add("");
                             }
-
                             if (lowPeak == 1 && lowCountdown == 0) {
                                 lowPeak = 0;
                             }
-
                             if (lowPeak == 1) {
                                 lowCountdown--;
 
@@ -700,111 +639,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 countdown--;
                             }
                         }
-
-
                     }
-//                    int period = 6;
-//                    int firstPeak = 0;
-//                    int countdown = period;
-//                    int candidateIndex = -1;
-//                    float candidateValue = Float.MIN_VALUE;
-//                    int peakCount = 0; // ピークのカウントを初期化
-//                    // ユークリッドノルムデータをfloat配列に変換
-//                    // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
-//                    float[] acc = new float[comDataList.size()];
-//                    for (int i = 0; i < comDataList.size(); i++) {
-//                        acc[i] = comDataList.get(i).floatValue();
-//                    }
-//
-//                    int[] isCandidate = new int[acc.length];
-//
-//                    //Map<Integer, Float> peaks = new HashMap<>();
-//
-//                    //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
-//                    //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
-//                    for (int i = 0; i < isCandidate.length; i++) {
-//                        //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
-//                        //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
-//
-//                        //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
-//                        if (acc[i] > PEAK_NUM && firstPeak == 0) {
-//                            // ピークが検出されたのでカウントを増やす
-//                            peakCount++;
-//                            comDataPeakList.add(String.valueOf(comDataList.get(i)));
-//                            firstPeak = 1;
-//
-//                        }else{
-//                            comDataPeakList.add("");
-//                        }
-//
-//                        if(firstPeak == 1 && countdown == 0 ) {
-//                            firstPeak = 0;
-//                            countdown = period;
-//                        }
-//
-//                        if(firstPeak == 1){
-//                            countdown--;
-//                        }
-//                    }
-
-//
-//                        //int flag = acc[i];//flag 変数は、現在のデータポイントがピーク候補であるかどうかを示すフラグ。isCandidate 配列の要素から値を取得して設定
-//                        //float val = acc[i];//val 変数は、現在のデータポイントの値（加速度データなど）を示す。acc 配列の要素から値を取得して設定
-//
-//                        //valが閾値を超えている、かつflag 変数は現在のデータポイントがピーク候補であるかどうかを示すフラグ
-//                        if (acc[i] > PEAK_NUM && candidateIndex == -1 ) {
-//                            first_peak  ;
-//                            candidateIndex = i;
-//                            candidateValue = acc[i];
-//                            countdown = period;
-//                        }
-//                        isCandidate[i] = 0; // デフォルトではピーク候補ではないと設定
-//
-//                        //countdown が0になるか、データポイントが最後に達した場合、現在のピーク候補が確定され、その位置と値が peaks マップに追加
-//                        if (acc[i] > PEAK_NUM && (countdown == 0 || i == isCandidate.length - 1 )) {
-//                            if (candidateIndex != -1) {
-//                                peaks.put(candidateIndex, candidateValue);
-//                                candidateIndex = -1;
-//                                // ピークが検出されたのでカウントを増やす
-//                                peakCount++;
-//                                comDataPeakList.add(String.valueOf(comDataList.get(i)));
-//                            } else {
-//                                comDataPeakList.add("");
-//                            }
-//                            //countdown は period の値にリセットされ、新しいピーク候補の有効期間が開始
-//                            countdown = period;
-//                        } else {
-//                            comDataPeakList.add("");
-//                        }
-//                    }
-//                    for(int i=delay_time; i<comDataList.size()-1; i++){ //遅延時間以降の加速度データの要素に対してループ
-//                        if (comDataList.get(i-1) < comDataList.get(i) && comDataList.get(i) > comDataList.get(i+1)){ //加速度データがピークの条件を満たしているかを判定
-//                            if (comDataList.get(i) > PEAK_NUM) { //ピークの条件を満たす加速度データの場合、その値が一定の閾値 PEAK_NUM を超えているかを確認
-//                                if(get_peak==0 || get_peak + peak_get_deley_time/INTERVAL_TIME < i ) { //t_peak が 0 であるか、一定の時間間隔（peak_get_deley_time）が経過した場合、新しいピークが検出されたと判断
-//                                    comDataPeakList.add(String.valueOf(comDataList.get(i))); //現在のピークの値を追加し、get_peak を現在のインデックス i に更新
-//                                    get_peak = i;
-//                                    before_peak = comDataList.get(i); //現在のピークの値で更新
-//                                }
-//                                else{ //つまり同じピーク範囲内である場合
-//                                    if(comDataList.get(i) > before_peak){ //ピークの値が before_peak よりも大きければ、現在のピークで前回のピーク情報をクリアし、新しいピーク情報を comDataPeakList に追加
-//                                        comDataPeakList.set(get_peak,"");
-//                                        comDataPeakList.add(String.valueOf(comDataList.get(i)));
-//                                    }else { //ピーク条件を満たさないため、空の情報を comDataPeakList に追加
-//                                        comDataPeakList.add("");
-//                                    }
-//                                }
-//                        } else {
-//                            comDataPeakList.add("");
-//                        }
-//                    }
-////                    //ピーク情報を含むデータをファイルに保存する処理
-//                    comDataPeakList.add(""); //comDataPeakList に空の情報を追加
-//                    for (int i = 0; i < comDataPeakList.size(); i++) { //歩数の計算に使用されており、ピーク情報が空の場合（歩行のピークがない場合）に歩数をカウント
-//                        if (comDataPeakList.get(i).equals("")) {
-//                            peakCount++;
-//                            char[] peak_num_hosu = new char[0];
-//                            ((TextView) findViewById(R.id.textview_hosu)).setText(String.valueOf(peak_num_hosu));
-//
                     if(hosu_stand_step_select == 0){
                         str = "歩数," + peakCount + "\n";
                         ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount));
@@ -836,93 +671,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     output.flush();
                     output.close();
                 }
-
-//移動平均フィルタ
-//                    ArrayList<Double> comDataSMAList = new ArrayList<>();
-//                output = new FileOutputStream(SMAacFile, true);
-//                str = "計測時間,実時間,X軸,Y軸,Z軸\n";
-//                output.write(str.getBytes());
-//                    for(int i = 0; i < passed_time.size() - SMA_NUM ; i++){
-//                        double SMADataAve_x = 0;
-//                        double SMADataAve_y = 0;
-//                        double SMADataAve_z = 0;
-//                        for(int j = 0; j < SMA_NUM; j++){
-//                            SMADataAve_x += accel_data.x.get(i + j);
-//                            SMADataAve_y += accel_data.y.get(i + j);
-//                            SMADataAve_z += accel_data.z.get(i + j);
-//                        }
-//                        SMAac_data.x.add((float) (SMADataAve_x/ SMA_NUM));
-//                        SMAac_data.y.add((float) (SMADataAve_y/ SMA_NUM));
-//                        SMAac_data.z.add((float) (SMADataAve_z/ SMA_NUM));
-//                    }
-//                    for (int i = 0; i < passed_time.size() -SMA_NUM; i++) {
-//                        str = passed_time.get(i) + "," + accel_data.time.get(i) + "," + SMAac_data.x.get(i) + "," + SMAac_data.y.get(i) + "," + SMAac_data.z.get(i) + "\n";
-//                        output.write(str.getBytes());
-//                    }
-//                    output.flush();
-//                    output.close();
-
-
-                //角速度センサ
-//                if (gyro_data.time.size() > 0) {
-//                    FileOutputStream output = new FileOutputStream(gyrofile, true);
-//                    str = "測定時間,実際の時間,X軸(角速度),Y軸(角速度),Z軸(角速度)\n";
-//                    output.write(str.getBytes());
-//                    int gyro_first_stack = (int)(gyro_data.time.get(0)/INTERVAL_TIME);
-//                    int gyro_passtime_stack = gyro_first_stack != 0 ? gyro_first_stack : 1;
-//                    int gyro_passtime = gyro_passtime_stack * INTERVAL_TIME;
-//                    int gyro_value;
-//                    for (int i = 1; i < gyro_data.time.size(); i++) {
-//                        if(gyro_passtime < gyro_data.time.get(i)) {
-//                            if (Math.abs(gyro_passtime - gyro_data.time.get(i - 1)) > Math.abs(gyro_passtime - gyro_data.time.get(i))) {
-//                                gyro_value = i;
-//                            } else {
-//                                gyro_value = i - 1;
-//                            }
-//                            str = (gyro_passtime) + ","
-//                                    + gyro_data.time.get(gyro_value) + ","
-//                                    + gyro_data.x.get(gyro_value) + ","
-//                                    + gyro_data.y.get(gyro_value) + ","
-//                                    + gyro_data.z.get(gyro_value) + "\n";
-//                            output.write(str.getBytes());
-//                            gyro_passtime_stack += 1;
-//                            gyro_passtime = gyro_passtime_stack * INTERVAL_TIME;
-//                        }
-//                    }
-//                    output.flush();
-//                    output.close();
-//                }
-
-                //地磁気センサ
-//                if (magnet_data.time.size() > 0) {
-//                    FileOutputStream output = new FileOutputStream(magnetfile, true);
-//                    str = "測定時間,実際の時間,X軸(地磁気強度),Y軸(地磁気強度),Z軸(地磁気強度)\n";
-//                    output.write(str.getBytes());
-//                    int magnet_first_stack = (int)(magnet_data.time.get(0)/INTERVAL_TIME);
-//                    int magnet_passtime_stack = magnet_first_stack != 0 ? magnet_first_stack : 1;
-//                    int magnet_passtime = magnet_passtime_stack * INTERVAL_TIME;
-//                    int magnet_value;
-//                    for (int i = 1; i < magnet_data.time.size(); i++) {
-//                        if(magnet_passtime < magnet_data.time.get(i)) {
-//                            if (Math.abs(magnet_passtime - magnet_data.time.get(i - 1)) > Math.abs(magnet_passtime - magnet_data.time.get(i))) {
-//                                magnet_value = i;
-//                            } else {
-//                                magnet_value = i - 1;
-//                            }
-//                            str = (magnet_passtime) + ","
-//                                    + magnet_data.time.get(magnet_value) + ","
-//                                    + magnet_data.x.get(magnet_value) + ","
-//                                    + magnet_data.y.get(magnet_value) + ","
-//                                    + magnet_data.z.get(magnet_value) + "\n";
-//                            output.write(str.getBytes());
-//                            magnet_passtime_stack += 1;
-//                            magnet_passtime = magnet_passtime_stack * INTERVAL_TIME;
-//                        }
-//                    }
-//                    output.flush();
-//                    output.close();
-//                }
-
             }
         }catch (IOException e) { //もし何らかのエラーが発生した場合、IOException がキャッチされ、エラーの詳細情報が出力
             // TODO 自動生成された catch ブロック
@@ -936,12 +684,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return(Environment.MEDIA_MOUNTED.equals(state)); //Environment.MEDIA_MOUNTED と取得した状態が一致するかどうかを確認し、外部ストレージが書き込み可能な状態であれば true を返す
     }
 
-    /* Checks if external storage is available for read and write */
-    //外部ストレージが書き込み可能な状態かどうかを確認するため
 
-
-
-    // 以下bluetooth関連メソッド
     //Bluetooth通信を行うためのBluetoothServiceクラスの定義
     static public class BluetoothService {
         // 定数（Bluetooth UUID） Bluetoothデバイス間でシリアル通信を行うために使用
