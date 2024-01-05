@@ -13,78 +13,21 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/hosu"
-            android:layout_width="106dp"
-            android:layout_height="50dp"
-            android:text="歩数"
-            tools:ignore="TouchTargetSizeCheck" />
-
-        <Button
-            android:id="@+id/stand"
-            android:layout_width="123dp"
-            android:layout_height="50dp"
-            android:text="立ち上がり"
-            tools:ignore="TouchTargetSizeCheck" />
-
-        <Button
-            android:id="@+id/step"
-            android:layout_width="wrap_content"
-            android:layout_height="50dp"
-            android:layout_marginTop="0dp"
-            android:text="ステッピング"
-            tools:ignore="TouchTargetSizeCheck" />
-    </LinearLayout>
-
-    <EditText
-        android:id="@+id/interval_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="測定間隔(ms)"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:textColorHint="#00796B" />
-
-    <EditText
-        android:id="@+id/peak_stats"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="ピーク検出用閾値設定"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:textColorHint="#00796B" />
-
-    <EditText
-        android:id="@+id/priod"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="検出時間設定"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:textColorHint="#00796B" />
-
-
-    <!--ボタン-->
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
+        <!--ボタン-->
         <Button
             android:id="@+id/start"
             android:layout_width="0dp"
-            android:layout_height="35dp"
+            android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="@string/start"
+            android:text="スタート"
             tools:ignore="TouchTargetSizeCheck" />
 
         <Button
-            android:id="@+id/end"
+            android:id="@+id/stop"
             android:layout_width="0dp"
-            android:layout_height="35dp"
+            android:layout_height="60dp"
             android:layout_weight="1"
-            android:text="@string/stop"
+            android:text="ストップ"
             tools:ignore="TouchTargetSizeCheck" />
     </LinearLayout>
 
@@ -98,149 +41,32 @@
             android:orientation="vertical">
 
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/textView_hosu_step_stand"
-                    android:layout_width="208dp"
-                    android:layout_height="match_parent"
-                    android:text="歩数："
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/textView_hosu"
-                    android:layout_width="86dp"
-                    android:layout_height="match_parent"
-                    android:text="0"
-                    android:textSize="18sp" />
-                <TextView
-                    android:id="@+id/MaxPeak"
-                    android:layout_width="86dp"
-                    android:layout_height="match_parent"
-                    android:text="0"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/textview"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="18sp" />
-
-
-            </LinearLayout>
-
             <Space
                 android:layout_width="5dp"
                 android:layout_height="wrap_content" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/device_name"
-                    android:textSize="18sp" />
-
-                <Space
-                    android:layout_width="5dp"
-                    android:layout_height="wrap_content" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/device_address"
-                    android:textSize="18sp" />
-
-                <Space
-                    android:layout_width="5dp"
-                    android:layout_height="wrap_content" />
-
-                <TextView
-                    android:id="@+id/textview_deviceaddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/button_connect"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/connect"
-                    android:textSize="18sp" />
-
-                <Space
-                    android:layout_width="5dp"
-                    android:layout_height="wrap_content" />
-
-                <Button
-                    android:id="@+id/button_disconnect"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/disconnect"
-                    android:textSize="18sp" />
-            </LinearLayout>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="20dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/read_string"
-                    android:textSize="18sp" />
-
-                <Space
-                    android:layout_width="5dp"
-                    android:layout_height="wrap_content" />
-
-                <TextView
-                    android:id="@+id/textview_read"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="18sp" />
-
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/textview_devicename"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="18sp" />
         </LinearLayout>
     </ScrollView>
-</LinearLayout>
 
+    <TextView
+        android:id="@+id/textview"
+        android:layout_width="match_parent"
+        android:layout_height="174dp"
+        android:textSize="18sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="67dp"
+        android:layout_margin="10dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textView_hosu"
+            android:layout_width="208dp"
+            android:layout_height="match_parent"
+            android:text="ステップ数："
+            android:textSize="18sp" />
+
+
+    </LinearLayout>
+</LinearLayout>
