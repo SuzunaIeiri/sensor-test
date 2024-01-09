@@ -54,19 +54,26 @@
         android:layout_height="174dp"
         android:textSize="18sp" />
 
-    <LinearLayout
+
+    <TextView
+        android:id="@+id/textView_step"
         android:layout_width="match_parent"
-        android:layout_height="67dp"
-        android:layout_margin="10dp"
-        android:orientation="vertical">
+        android:layout_height="93dp"
+        android:text="ステップ数："
+        android:textSize="18sp" />
 
-        <TextView
-            android:id="@+id/textView_hosu"
-            android:layout_width="208dp"
-            android:layout_height="match_parent"
-            android:text="ステップ数："
-            android:textSize="18sp" />
+    <TextView
+        android:id="@+id/textView_average"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="データ数平均："
+        android:textSize="18sp" />
 
+    <TextView
+        android:id="@+id/textView_stdDev"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:text="データ数標準偏差："
+        android:textSize="18sp" />
 
-    </LinearLayout>
 </LinearLayout>

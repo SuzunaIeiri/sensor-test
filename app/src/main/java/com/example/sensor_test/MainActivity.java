@@ -100,12 +100,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // 定数
     private int INTERVAL_TIME = 20; //測定間隔(mSec)
-    private double PEAK_NUM = 14.5; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
+    private double PEAK_NUM = 12; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
     private double PERIOD = 5;//一つ目のピークから次のピークまでの検出しない時間を設定する
     private double STEP_TIME = 10000;//ステッピングの計測時間を設定する
 
     // GUIアイテム
-    private Button mButton_Start;    // センサ測定開始ボタン
+    private Button mButton_Start;    // センサ測定開始ボタンa
     private Button mButton_End;    // センサ測定終了ボタン
 
     @SuppressLint("MissingInflatedId")
@@ -328,18 +328,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // ユークリッドノルムデータをfloat配列に変換
                     // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
                     float[] acc = new float[comDataList.size()];
+                    for (int i = 0; i < comDataList.size(); i++) {
+                        acc[i] = comDataList.get(i).floatValue();
+                    }
                     int[] isCandidate = new int[acc.length];
 
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
-                    for (int i = 0; i < isCandidate.length; i++) {
+                    for (int i = 0; i < isCandidate.length ; i++) {
                         if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
                             // ピークが検出されたのでカウントを増やす
                             peakCount++;
                             comDataPeakList.add(String.valueOf(comDataList.get(i)));
                             firstPeak = 1;
                             if (lastPeakIndex != -1) {
-                                int pointCount = 0;
+                                int pointCount = 0;//ピーク間のデータ数を初期化
                                 for (int j = lastPeakIndex + 1; j < i; j++) {
                                     if (acc[j] < 9.8) {
                                         pointCount++;
@@ -349,12 +352,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             }
                             lastPeakIndex = i;
 
-                            //ピーク間のデータ数を表示
-                            for (int count : pointsBetweenPeaks) {
-                                System.out.println("ピーク間のデータ数" + count);
-                            }
-                        }
-                        if (firstPeak == 1 && countdown == 0) {
+                        } else {
+                        comDataPeakList.add("");
+                    }
+                    if (firstPeak == 1 && countdown == 0) {
                             firstPeak = 0;
                             countdown = period;
                         }
@@ -363,14 +364,36 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             countdown--;
                         }
                     }
-                    if (peakCount != 0) {
-                        str = "ステップ数," + peakCount / 2 + "\n";
-                        ((TextView) findViewById(R.id.textView_hosu)).setText(String.valueOf(peakCount / 2));
+                    if (!pointsBetweenPeaks.isEmpty()) {
+                        double sum = 0.0;
+                        for (int count : pointsBetweenPeaks) {
+                            sum += count;
+                        }
+                        //データ数の平均
+                        double average = sum / pointsBetweenPeaks.size();
+
+                        double standardDeviationSum = 0.0;
+                        for (int count : pointsBetweenPeaks) {
+                            standardDeviationSum += Math.pow(count - average, 2);
+                        }
+                        //データ数の標準偏差
+                        double standardDeviation = Math.sqrt(standardDeviationSum / pointsBetweenPeaks.size());
+
+                        // 画面に平均と標準偏差を表示
+                        ((TextView) findViewById(R.id.textView_average)).setText("平均: " + average);
+                        ((TextView) findViewById(R.id.textView_stdDev)).setText("標準偏差: " + standardDeviation);
                     } else {
-                        str = "ステップ数, 0\n";
-                        ((TextView) findViewById(R.id.textView_hosu)).setText("0");
+                        ((TextView) findViewById(R.id.textView_average)).setText("平均: データなし");
+                        ((TextView) findViewById(R.id.textView_stdDev)).setText("標準偏差: データなし");
                     }
 
+                    if (peakCount != 0) {
+                        str = "ステップ数," + peakCount + "\n";
+                        ((TextView) findViewById(R.id.textView_step)).setText(String.valueOf(peakCount));
+                    } else {
+                        str = "ステップ数, 0\n";
+                        ((TextView) findViewById(R.id.textView_step)).setText("0");
+                    }
 
                     str += "計測時間,実時間,3軸,ピーク\n"; //計測時間、実時間、3軸のデータ、ピーク情報を表すヘッダー行を作成し、str 変数に追加
                     output.write(str.getBytes()); //ファイルに書き込み
