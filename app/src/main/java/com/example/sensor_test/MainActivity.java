@@ -100,8 +100,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // 定数
     private int INTERVAL_TIME = 20; //測定間隔(mSec)
-    private double PEAK_NUM = 12; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
-    private double PERIOD = 5;//一つ目のピークから次のピークまでの検出しない時間を設定する
+    private double PEAK_NUM = 11; //ピーク検出用閾値(水平に手に持った時) 自然に持って振ったときは14.0前後必要
+    private double PERIOD = 6;//一つ目のピークから次のピークまでの検出しない時間を設定する
     private double STEP_TIME = 10000;//ステッピングの計測時間を設定する
 
     // GUIアイテム
@@ -324,6 +324,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     int countdown = period;
                     int peakCount = 0; // ピークのカウントを初期化
                     int lastPeakIndex = -1;
+                    double average = 0;
+                    double standardDeviation = 0;
 
                     // ユークリッドノルムデータをfloat配列に変換
                     // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
@@ -370,14 +372,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             sum += count;
                         }
                         //データ数の平均
-                        double average = sum / pointsBetweenPeaks.size();
+                        average = sum / pointsBetweenPeaks.size();
 
                         double standardDeviationSum = 0.0;
-                        for (int count : pointsBetweenPeaks) {
+                        for (int count : pointsBetweenPeaks) {//各データポイントと平均値との差の二乗を計算し、その合計を求める
                             standardDeviationSum += Math.pow(count - average, 2);
                         }
                         //データ数の標準偏差
-                        double standardDeviation = Math.sqrt(standardDeviationSum / pointsBetweenPeaks.size());
+                        standardDeviation = Math.sqrt(standardDeviationSum / pointsBetweenPeaks.size());//分散の合計をデータポイントの数で割って分散を得る、その値の平方根で取ることで標準偏差を出す
 
                         // 画面に平均と標準偏差を表示
                         ((TextView) findViewById(R.id.textView_average)).setText("平均: " + average);
@@ -388,8 +390,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     }
 
                     if (peakCount != 0) {
-                        str = "ステップ数," + peakCount + "\n";
-                        ((TextView) findViewById(R.id.textView_step)).setText(String.valueOf(peakCount));
+                        str = "step: " + peakCount + "\n";
+                        str += "step_ave : " + average + "\n";
+                        str += "step_std : " + standardDeviation + "\n";
+                        ((TextView) findViewById(R.id.textView_step)).setText("歩数: " + String.valueOf(peakCount));
                     } else {
                         str = "ステップ数, 0\n";
                         ((TextView) findViewById(R.id.textView_step)).setText("0");
