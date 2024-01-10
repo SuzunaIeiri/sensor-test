@@ -317,15 +317,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     // true フラグを使用して、ファイルが既存の内容を保持しながらデータを追加するように設定
                     output = new FileOutputStream(axisPeakFile, true); // 既存のファイルにデータを追加していくことができる
                     ArrayList<String> comDataPeakList = new ArrayList<>(); // ピーク検出の結果や関連する情報を格納するための ArrayList オブジェクト comDataPeakList を作成
-                    ArrayList<String> comDataUnderPeakList = new ArrayList<>();
-                    ArrayList<Integer> pointsBetweenPeaks = new ArrayList<>();
+                    ArrayList<Integer> pointsBetweenPeaks = new ArrayList<>();//ピーク間のデータ数を格納するリスト
+                    ArrayList<Integer> comDataLowPeakList = new ArrayList<>();//下ピークのリスト
+
                     int period = (int) PERIOD;
-                    int firstPeak = 0;
+                   // int firstPeak = 0;
                     int countdown = period;
                     int peakCount = 0; // ピークのカウントを初期化
                     int lastPeakIndex = -1;
-                    double average = 0;
-                    double standardDeviation = 0;
+                    double average = 0;//ピーク間のデータ数の平均
+                    double standardDeviation = 0;//ピーク間のデータ数の標準偏差
+                    boolean isSearchingForLowPeak = false;//下ピークを探しているか示すフラグ
+                    double minPeak = Double.MAX_VALUE;//下のピークを初期化
+                    int lowIndex = -1;//最小値のインデックス
+                    double lowaverage = 0;//下ピーク間の平均
 
                     // ユークリッドノルムデータをfloat配列に変換
                     // omDataList 内の各要素を float 型に変換し、新しい acc 配列に格納
@@ -337,12 +342,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
-                    for (int i = 0; i < isCandidate.length ; i++) {
-                        if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
-                            // ピークが検出されたのでカウントを増やす
+                    for (int i = 0; i < isCandidate.length; i++) {
+                        if(countdown > 0) {
+                            countdown--;
+                        } else if (acc[i] > PEAK_NUM && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
+                            // 上のピークが検出された場合
                             peakCount++;
                             comDataPeakList.add(String.valueOf(comDataList.get(i)));
-                            firstPeak = 1;
+                            //firstPeak = 1;
+                            countdown = period;
                             if (lastPeakIndex != -1) {
                                 int pointCount = 0;//ピーク間のデータ数を初期化
                                 for (int j = lastPeakIndex + 1; j < i; j++) {
@@ -354,18 +362,56 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             }
                             lastPeakIndex = i;
 
+                            if (isSearchingForLowPeak) {
+                                // 二つの上のピーク間の最小値を下のピークとして記録
+                                comDataLowPeakList.add(lowIndex);
+                                isSearchingForLowPeak = false;
+                                minPeak = Double.MAX_VALUE;
+                            } else {
+                                isSearchingForLowPeak = true;
+                            }
+                            lastPeakIndex = i;
                         } else {
-                        comDataPeakList.add("");
-                    }
-                    if (firstPeak == 1 && countdown == 0) {
-                            firstPeak = 0;
-                            countdown = period;
-                        }
+                            comDataPeakList.add("");
+                            if (isSearchingForLowPeak && acc[i] < minPeak) {
+                                // 下のピークを探している場合、最小値を更新
+                                minPeak = acc[i];
+                                lowIndex = i;
+                            } else if (isSearchingForLowPeak) {
+                                comDataLowPeakList.add(0);
 
-                        if (firstPeak == 1) {
-                            countdown--;
+                            }
                         }
                     }
+
+                    if (isSearchingForLowPeak) {
+                        // ループの終わりに最後の下のピークを記録
+                        comDataLowPeakList.add(lowIndex);
+                    }
+//
+//                    if (firstPeak == 1 && countdown == 0) {
+//                        firstPeak = 0;
+//                        countdown = period;
+//                    }
+//
+//                    if (firstPeak == 1) {
+//                        countdown--;
+//                    }
+
+                    if (isSearchingForLowPeak) {
+                        comDataPeakList.add(String.valueOf(comDataList.get(lowIndex)));
+                    }
+                    if(!comDataLowPeakList.isEmpty()) {
+                        double sum = 0.0;
+                        for (int lowValue : comDataLowPeakList) {
+                            sum += 9.8 - acc[lowValue];
+                        }
+                        lowaverage = sum / comDataLowPeakList.size();
+
+                        // 画面に平均と標準偏差を表示
+                        ((TextView) findViewById(R.id.textView_lowstep)).setText("下ピーク値平均: " + lowaverage);
+                    }
+
                     if (!pointsBetweenPeaks.isEmpty()) {
                         double sum = 0.0;
                         for (int count : pointsBetweenPeaks) {
@@ -393,6 +439,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         str = "step: " + peakCount + "\n";
                         str += "step_ave : " + average + "\n";
                         str += "step_std : " + standardDeviation + "\n";
+                        str += "low_step : " + lowaverage + "\n";
                         ((TextView) findViewById(R.id.textView_step)).setText("歩数: " + String.valueOf(peakCount));
                     } else {
                         str = "ステップ数, 0\n";
@@ -401,8 +448,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                     str += "計測時間,実時間,3軸,ピーク\n"; //計測時間、実時間、3軸のデータ、ピーク情報を表すヘッダー行を作成し、str 変数に追加
                     output.write(str.getBytes()); //ファイルに書き込み
-                    for (int i = 0; i < passed_time.size(); i++) { //各要素を組み合わせて1行のデータを作成し、ファイルに書き込み
-                        str = passed_time.get(i) + "," + accel_data.time.get(i) + "," + comDataList.get(i) + "," + comDataPeakList.get(i) + "\n";
+                    for (int i = 0; i < passed_time.size(); i++) {
+                        String peakData = i < comDataPeakList.size() ? comDataPeakList.get(i) : "";
+                        String lowPeakData = i < comDataLowPeakList.size() ? comDataLowPeakList.get(i).toString() : "";
+                        str = passed_time.get(i) + "," + accel_data.time.get(i) + "," + comDataList.get(i) + "," + peakData + "," + lowPeakData + "\n";
                         output.write(str.getBytes());
                     }
                     output.flush();

@@ -59,21 +59,27 @@
         android:id="@+id/textView_step"
         android:layout_width="match_parent"
         android:layout_height="93dp"
-        android:text="ステップ数："
+        android:text="ステップ数： "
         android:textSize="18sp" />
 
     <TextView
         android:id="@+id/textView_average"
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:text="データ数平均："
+        android:text="データ数平均： "
         android:textSize="18sp" />
 
     <TextView
         android:id="@+id/textView_stdDev"
         android:layout_width="match_parent"
         android:layout_height="80dp"
-        android:text="データ数標準偏差："
+        android:text="データ数標準偏差： "
+        android:textSize="18sp" />
+    <TextView
+        android:id="@+id/textView_lowstep"
+        android:layout_width="match_parent"
+        android:layout_height="93dp"
+        android:text="下ピーク値： "
         android:textSize="18sp" />
 
 </LinearLayout>
