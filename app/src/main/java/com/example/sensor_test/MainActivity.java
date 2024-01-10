@@ -328,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     double average = 0;//ピーク間のデータ数の平均
                     double standardDeviation = 0;//ピーク間のデータ数の標準偏差
                     boolean isSearchingForLowPeak = false;//下ピークを探しているか示すフラグ
+                    boolean foundLowPeak = false;//最小値が取れているか
                     double minPeak = Double.MAX_VALUE;//下のピークを初期化
                     int lowIndex = -1;//最小値のインデックス
                     double lowAverage = 0;//下ピーク間の平均
@@ -343,6 +344,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
                     for (int i = 0; i < isCandidate.length; i++) {
+                        if (isSearchingForLowPeak && acc[i] < minPeak) {
+                            // 下のピークを探している場合、最小値を更新
+                            minPeak = acc[i];
+                            lowIndex = i;
+                        }
+
                         if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
                             // 上のピークが検出された場合
                             peakCount++;
@@ -350,7 +357,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             firstPeak = 1;
 
                             if (lastPeakIndex != -1) {
-                                int pointCount = 0;//ピーク間のデータ数を初期化
+                                int pointCount = 0; // ピーク間のデータ数を初期化
                                 for (int j = lastPeakIndex + 1; j < i; j++) {
                                     if (acc[j] < 9.8) {
                                         pointCount++;
@@ -358,29 +365,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                 }
                                 pointsBetweenPeaks.add(pointCount);
                             }
-                            lastPeakIndex = i;
-
+                            //下ピークを探す処理
                             if (isSearchingForLowPeak) {
                                 // 二つの上のピーク間の最小値を下のピークとして記録
-                                comDataLowPeakList.add(String.valueOf(lowIndex));
+                                comDataLowPeakList.add(String.valueOf(comDataList.get(lowIndex)));
                                 isSearchingForLowPeak = false;
                                 minPeak = Double.MAX_VALUE;
                             } else {
                                 isSearchingForLowPeak = true;
+                                comDataLowPeakList.add("");
                             }
                             lastPeakIndex = i;
-                            if (isSearchingForLowPeak && acc[i] < minPeak) {
-                                // 下のピークを探している場合、最小値を更新
-                                minPeak = acc[i];
-                                lowIndex = i;
-                            } else if (isSearchingForLowPeak) {
-                                comDataLowPeakList.add("");
-
-                            }
                         } else {
                             comDataPeakList.add("");
+                            comDataLowPeakList.add("");
                         }
-                        if(firstPeak == 1 && countdown == 0) {
+                        if (firstPeak == 1 && countdown == 0) {
                             firstPeak = 0;
                             countdown = period;
                         }
@@ -389,17 +389,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         }
                     }
                     if (isSearchingForLowPeak) {
-                        // ループの終わりに最後の下のピークを記録
-                        comDataLowPeakList.add(String.valueOf(lowIndex));
+                        comDataLowPeakList.add(String.valueOf(comDataList.get(lowIndex)));
                     }
-                    if (isSearchingForLowPeak) {
-                        comDataPeakList.add(String.valueOf(comDataList.get(lowIndex)));
-                    }
-                    if(!comDataLowPeakList.isEmpty()) {
+                    if (!comDataLowPeakList.isEmpty()) {
                         double lowPeakSum = 0.0;
                         for (String lowValue : comDataLowPeakList) {
                             if (!lowValue.equals("") && !lowValue.equals("-1")) {
-                                int index = Integer.parseInt(lowValue);
+                                int index = (int) Float.parseFloat(lowValue);
                                 if (index >= 0 && index < acc.length) {
                                     lowPeakSum += 9.8 - acc[index];
                                 }
