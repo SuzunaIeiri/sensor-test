@@ -327,8 +327,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     int lastPeakIndex = -1;
                     double average = 0;//ピーク間のデータ数の平均
                     double standardDeviation = 0;//ピーク間のデータ数の標準偏差
-                    boolean isSearchingForLowPeak = false;//下ピークを探しているか示すフラグ
-                    boolean foundLowPeak = false;//最小値が取れているか
                     double minPeak = Double.MAX_VALUE;//下のピークを初期化
                     int lowIndex = -1;//最小値のインデックス
                     double lowAverage = 0;//下ピーク間の平均
@@ -344,17 +342,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     //ピーク候補を示すフラグが格納された isCandidate 配列.この配列は、データポイントごとにピーク候補かどうかを示す整数値を持っており、ピーク検出の対象データ
                     //各データポイントに対して、countdown のカウントダウン、flag の評価、および val の値の取得
                     for (int i = 0; i < isCandidate.length; i++) {
-                        if (isSearchingForLowPeak && acc[i] < minPeak) {
-                            // 下のピークを探している場合、最小値を更新
-                            minPeak = acc[i];
-                            lowIndex = i;
-                        }
-
                         if (acc[i] > PEAK_NUM && firstPeak == 0 && acc[i - 1] < acc[i] && acc[i + 1] < acc[i]) {
                             // 上のピークが検出された場合
                             peakCount++;
                             comDataPeakList.add(String.valueOf(comDataList.get(i)));
                             firstPeak = 1;
+                            countdown = period;
 
                             if (lastPeakIndex != -1) {
                                 int pointCount = 0; // ピーク間のデータ数を初期化
@@ -362,23 +355,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                     if (acc[j] < 9.8) {
                                         pointCount++;
                                     }
+                                    //下のピーク検出
+                                    if (acc[j] < minPeak) {
+                                        minPeak = acc[j];
+                                        lowIndex = j;
+                                    }
                                 }
                                 pointsBetweenPeaks.add(pointCount);
-                            }
-                            //下ピークを探す処理
-                            if (isSearchingForLowPeak) {
-                                // 二つの上のピーク間の最小値を下のピークとして記録
-                                comDataLowPeakList.add(String.valueOf(comDataList.get(lowIndex)));
-                                isSearchingForLowPeak = false;
-                                minPeak = Double.MAX_VALUE;
-                            } else {
-                                isSearchingForLowPeak = true;
-                                comDataLowPeakList.add("");
+                                //下のピークを記録
+                                if (lowIndex != -1) {
+                                    comDataLowPeakList.add(String.valueOf(comDataList.get(lowIndex)));
+                                } else {
+                                    comDataLowPeakList.add("");
+                                }
                             }
                             lastPeakIndex = i;
+                            minPeak = Double.MAX_VALUE;
+                            lowIndex = -1;
                         } else {
                             comDataPeakList.add("");
-                            comDataLowPeakList.add("");
                         }
                         if (firstPeak == 1 && countdown == 0) {
                             firstPeak = 0;
@@ -388,25 +383,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             countdown--;
                         }
                     }
-                    if (isSearchingForLowPeak) {
-                        comDataLowPeakList.add(String.valueOf(comDataList.get(lowIndex)));
-                    }
                     if (!comDataLowPeakList.isEmpty()) {
                         double lowPeakSum = 0.0;
-                        for (String lowValue : comDataLowPeakList) {
-                            if (!lowValue.equals("") && !lowValue.equals("-1")) {
-                                int index = (int) Float.parseFloat(lowValue);
-                                if (index >= 0 && index < acc.length) {
-                                    lowPeakSum += 9.8 - acc[index];
-                                }
-                            }
+                        for (int lowCount : comDataLowPeakList) {
+                            lowPeakSum += lowCount;
                         }
-                        lowAverage = lowPeakSum / comDataLowPeakList.size();
+                        lowAverage = 9.8 - (lowPeakSum / comDataLowPeakList.size());
                         // 画面に平均と標準偏差を表示
-                        ((TextView) findViewById(R.id.textView_lowstep)).setText("下ピーク値平均: " + lowAverage);
+                        ((TextView) findViewById(R.id.textView_lowstep)).setText("下ピーク平均値: " + lowAverage);
                     }
-
-                        if (!pointsBetweenPeaks.isEmpty()) {
+                    if (!pointsBetweenPeaks.isEmpty()) {
                         double sum = 0.0;
                         for (int count : pointsBetweenPeaks) {
                             sum += count;
@@ -440,12 +426,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         ((TextView) findViewById(R.id.textView_step)).setText("0");
                     }
 
-                    str += "計測時間,実時間,3軸,ピーク\n"; //計測時間、実時間、3軸のデータ、ピーク情報を表すヘッダー行を作成し、str 変数に追加
-                    output.write(str.getBytes()); //ファイルに書き込み
+                    str += "計測時間,実時間,acc,Peak,LowPeak\n"; // 下のピークをヘッダーに追加
+                    output.write(str.getBytes()); // ヘッダー行の書き込み
                     for (int i = 0; i < passed_time.size(); i++) {
-                        String peakData = i < comDataPeakList.size() ? comDataPeakList.get(i) : "";
-                        String lowPeakData = i < comDataLowPeakList.size() ? comDataLowPeakList.get(i).toString() : "";
+                        // ピークデータと下のピークデータの取得
+                        String peakData = (i < comDataPeakList.size()) ? comDataPeakList.get(i) : "";
+                        String lowPeakData = (i < comDataLowPeakList.size()) ? comDataLowPeakList.get(i) : "";
+
+                        // CSVフォーマットの文字列の作成
                         str = passed_time.get(i) + "," + accel_data.time.get(i) + "," + comDataList.get(i) + "," + peakData + "," + lowPeakData + "\n";
+
+                        // 文字列の書き込み
                         output.write(str.getBytes());
                     }
                     output.flush();
